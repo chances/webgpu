@@ -1,0 +1,64 @@
+name: Node WebGPU CI
+
+on: push
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # node: [12.x, 13.x]
+        node: [13.x]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.js ${{ matrix.node }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+    - uses: actions/cache@v1
+      id: depot_tools_cache
+      with:
+        path: lib/depot_tools
+        key: ${{ matrix.os }}-depot_tools_cache
+    - name: Clone Google depot_tools
+      if: steps.depot_tools_cache.outputs.cache-hit != 'true' && (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest')
+      run: |
+        git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git lib/depot_tools
+    - name: Download Google depot_tools Windows Bundle
+      uses: wei/curl@v1
+      if: steps.depot_tools_cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
+      with:
+        args: https://storage.googleapis.com/chrome-infra/depot_tools.zip --output depot_tools.zip
+    - name: Unzip Google depot_tools Windows Bundle
+      uses: montudor/action-zip@v0.1.0
+      if: steps.depot_tools_cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest' && success()
+      with:
+        args: unzip -qq depot_tools.zip -d ./lib
+    - name: Compile Dawn Shared Library
+      run: |
+        ls lib
+        git clone https://dawn.googlesource.com/dawn lib/dawn
+        cp lib/dawn/scripts/standalone.gclient lib/dawn/.gclient
+        cd lib/dawn && ./../depot_tools/gclient sync
+        pwd
+        cd lib/dawn && ./../depot_tools/gn gen out/Shared --target_cpu="x64" --args="is_component_build=true is_debug=false is_clang=true"
+        ls ${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/PATH_TO_DAWN
+        echo "lib/dawn" > ${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/PATH_TO_DAWN
+    - name: Install Dependencies
+      if: success()
+      run: |
+        npm install
+    - name: Build Node Addon
+      if: success()
+      run: |
+        npm run build
+    - name: Test
+      if: success()
+      run: |
+        npm run tests
+      env:
+        CI: true
