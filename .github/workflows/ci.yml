@@ -39,12 +39,18 @@ jobs:
       run: |
         echo "${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/depot_tools"
         echo "::add-path::${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/depot_tools"
-    - name: Sync Dawn Repo
+    - name: Clone Dawn Repo
       run: |
         git clone https://dawn.googlesource.com/dawn lib/dawn
         ls lib
-        cp lib/dawn/scripts/standalone.gclient lib/dawn/.gclient
-        cd lib/dawn && gclient sync
+    - name: Sync Dawn Repo
+      working-directory: ./lib/dawn
+      run: |
+        cp scripts/standalone.gclient lib/dawn/.gclient
+        which gclient
+        echo ""
+        echo "$PATH"
+        gclient sync
     - name: Compile Dawn Shared Library (Unix)
       working-directory: ./lib/dawn
       if: success() && matrix.os != 'windows-latest'
