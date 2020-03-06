@@ -34,11 +34,12 @@ jobs:
     - name: Download and Unzip Google depot_tools Windows Bundle
       if: steps.depot_tools_cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
       run: |
-        npx download-cli --extract --out lib/depot_tools https://storage.googleapis.com/chrome-infra/depot_tools.zip
+        (New-Object System.Net.WebClient).DownloadFile("https://storage.googleapis.com/chrome-infra/depot_tools.zip","depot_tools.zip");
+        Expand-Archive .\depot_tools.zip .\lib\depot_tools;
     - name: Add Depot Tools to PATH
       run: |
-        echo "${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/depot_tools"
-        echo "::add-path::${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/depot_tools"
+        echo "::add-path::${{ runner.workspace }}/lib/depot_tools"
+    # For Windows? echo "##[add-path]${{ runner.workspace }}/lib/depot_tools"
     - name: Clone Dawn Repo
       run: |
         git clone https://dawn.googlesource.com/dawn lib/dawn
@@ -47,9 +48,9 @@ jobs:
       working-directory: ./lib/dawn
       run: |
         cp scripts/standalone.gclient .gclient
-        which gclient
         echo ""
         echo "$PATH"
+        which gclient
         gclient sync
     - name: Compile Dawn Shared Library (Unix)
       working-directory: ./lib/dawn
@@ -66,8 +67,8 @@ jobs:
     - name: Set Path to Dawn
       if: success()
       run: |
-        echo "${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/dawn"
-        echo "lib/dawn" > ${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/dawn
+        echo "${{ runner.workspace }}/lib/dawn"
+        echo "lib/dawn" > ${{ runner.workspace }}/lib/dawn
     - name: Install Dependencies
       if: success()
       run: |
