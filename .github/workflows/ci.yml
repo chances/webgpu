@@ -38,8 +38,7 @@ jobs:
         Expand-Archive .\depot_tools.zip .\lib\depot_tools;
     - name: Add Depot Tools to PATH
       run: |
-        echo "::add-path::${{ runner.workspace }}/lib/depot_tools"
-    # For Windows? echo "##[add-path]${{ runner.workspace }}/lib/depot_tools"
+        echo "::add-path::${{ github.workspace }}/lib/depot_tools"
     - name: Clone Dawn Repo
       run: |
         git clone https://dawn.googlesource.com/dawn lib/dawn
@@ -67,18 +66,15 @@ jobs:
     - name: Set Path to Dawn
       if: success()
       run: |
-        echo "${{ runner.workspace }}/lib/dawn"
-        echo "lib/dawn" > ${{ runner.workspace }}/lib/dawn
+        echo "${{ github.workspace }}/lib/dawn"
+        echo "lib/dawn" > ${{ github.workspace }}/lib/dawn
     - name: Install Dependencies
-      if: success()
       run: |
         npm install
     - name: Build Node Addon
-      if: success()
       run: |
         npm run build
     - name: Test
-      if: success()
       run: |
         npm run tests
       env:
