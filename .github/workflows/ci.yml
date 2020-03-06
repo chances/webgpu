@@ -71,12 +71,9 @@ jobs:
       run: |
         echo "${{ github.workspace }}/lib/dawn"
         echo "${{ github.workspace }}/lib/dawn" > PATH_TO_DAWN
-    - name: Install Dependencies
-      run: |
-        npm install
     - name: Build Node Addon
       run: |
-        npm run build
+        npm run all --dawnversion=0.0.1
     - name: Test
       run: |
         npm run tests
