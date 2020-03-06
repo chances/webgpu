@@ -21,7 +21,7 @@ jobs:
         node-version: ${{ matrix.node }}
     - uses: actions/setup-python@v1
       with:
-        python-version: '3.x'
+        python-version: '2.7'
     - uses: actions/cache@v1
       id: depot_tools_cache
       with:
@@ -47,9 +47,6 @@ jobs:
       working-directory: ./lib/dawn
       run: |
         cp scripts/standalone.gclient .gclient
-        echo ""
-        echo "$PATH"
-        which gclient
         gclient sync
     - name: Compile Dawn Shared Library (Unix)
       working-directory: ./lib/dawn
