@@ -46,7 +46,7 @@ jobs:
     - name: Sync Dawn Repo
       working-directory: ./lib/dawn
       run: |
-        cp scripts/standalone.gclient lib/dawn/.gclient
+        cp scripts/standalone.gclient .gclient
         which gclient
         echo ""
         echo "$PATH"
