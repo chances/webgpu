@@ -43,6 +43,10 @@ jobs:
       run: |
         git clone https://dawn.googlesource.com/dawn lib/dawn
         ls lib
+    - name: Use Locally Installed Visual Studio
+      if: matrix.os == 'windows-latest'
+      run: |
+        echo "::set-env name=DEPOT_TOOLS_WIN_TOOLCHAIN::0"
     - name: Sync Dawn Repo
       working-directory: ./lib/dawn
       run: |
