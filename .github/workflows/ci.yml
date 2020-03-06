@@ -69,7 +69,7 @@ jobs:
       if: success()
       run: |
         echo "${{ github.workspace }}/lib/dawn"
-        echo "lib/dawn" > ${{ github.workspace }}/lib/dawn
+        echo "${{ github.workspace }}/lib/dawn" > PATH_TO_DAWN
     - name: Install Dependencies
       run: |
         npm install
