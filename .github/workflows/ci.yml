@@ -19,35 +19,48 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node }}
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.x'
     - uses: actions/cache@v1
       id: depot_tools_cache
       with:
         path: lib/depot_tools
         key: ${{ matrix.os }}-depot_tools_cache
     - name: Clone Google depot_tools
-      if: steps.depot_tools_cache.outputs.cache-hit != 'true' && (matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest')
+      if: steps.depot_tools_cache.outputs.cache-hit != 'true' && matrix.os != 'windows-latest'
       run: |
         git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git lib/depot_tools
-    - name: Download Google depot_tools Windows Bundle
-      uses: wei/curl@v1
+    - name: Download and Unzip Google depot_tools Windows Bundle
       if: steps.depot_tools_cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
-      with:
-        args: https://storage.googleapis.com/chrome-infra/depot_tools.zip --output depot_tools.zip
-    - name: Unzip Google depot_tools Windows Bundle
-      uses: montudor/action-zip@v0.1.0
-      if: steps.depot_tools_cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest' && success()
-      with:
-        args: unzip -qq depot_tools.zip -d ./lib
-    - name: Compile Dawn Shared Library
       run: |
-        ls lib
+        npx download-cli --extract --out lib/depot_tools https://storage.googleapis.com/chrome-infra/depot_tools.zip
+    - name: Add Depot Tools to PATH
+      run: |
+        echo "::add-path::${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/dawn"
+    - name: Sync Dawn Repo
+      run: |
         git clone https://dawn.googlesource.com/dawn lib/dawn
+        ls lib
         cp lib/dawn/scripts/standalone.gclient lib/dawn/.gclient
-        cd lib/dawn && ./../depot_tools/gclient sync
-        pwd
-        cd lib/dawn && ./../depot_tools/gn gen out/Shared --target_cpu="x64" --args="is_component_build=true is_debug=false is_clang=true"
-        ls ${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/PATH_TO_DAWN
-        echo "lib/dawn" > ${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/PATH_TO_DAWN
+        cd lib/dawn && gclient sync
+    - name: Compile Dawn Shared Library (Unix)
+      working-directory: ./lib/dawn
+      if: success() && matrix.os != 'windows-latest'
+      run: |
+        gn gen out/Shared --target_cpu="x64" --args="is_component_build=true is_debug=false is_clang=true"
+        ninja -C out/Shared
+    - name: Compile Dawn Shared Library (Windows)
+      working-directory: ./lib/dawn
+      if: success() && matrix.os == 'windows-latest'
+      run: |
+        gn gen out/Shared --ide=vs --target_cpu="x64" --args="is_component_build=true is_debug=false is_clang=false"
+        ninja -C out/Shared
+    - name: Set Path to Dawn
+      if: success()
+      run: |
+        echo "${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/PATH_TO_DAWN"
+        echo "lib/dawn" > ${GITHUB_WORKSPACE}/${GITHUB_REPOSITORY}/lib/dawn
     - name: Install Dependencies
       if: success()
       run: |
